@@ -45,13 +45,22 @@ func GetRunType() (RunType, error) {
 	}
 	switch runtime.GOOS {
 	case "windows":
+		// C:\Users\5950X\AppData\Local\Temp\GoLand\___go_build_github_com_golang_infrastructure_go_project_root_directory_main_test.exe
 		if strings.Contains(executable, "\\AppData\\Local\\Temp\\") {
 			return RunTypeSourceCode, nil
 		} else {
 			return RunTypeReleaseBinary, nil
 		}
 	case "linux":
+		// /tmp/go-build1325605723/b001/exe/test
 		if strings.HasPrefix(executable, "/tmp/go-build") {
+			return RunTypeSourceCode, nil
+		} else {
+			return RunTypeReleaseBinary, nil
+		}
+	case "darwin":
+		// /var/folders/kd/dzyx8fc96fx4j3mtdtjsl4z40000gn/T/go-build3362823274/b001/exe/main
+		if strings.HasSuffix(executable, "/exe/main") && strings.Contains(executable, "/go-build") {
 			return RunTypeSourceCode, nil
 		} else {
 			return RunTypeReleaseBinary, nil
@@ -153,8 +162,16 @@ func GetRunIDE() (RunIDE, error) {
 	if err != nil {
 		return RunIDEUnknown, err
 	}
-	if strings.HasSuffix(filepath.Dir(executable), "\\Temp\\GoLand") {
-		return RunIDEGoland, nil
+	dir := filepath.Dir(executable)
+	switch runtime.GOOS {
+	case "windows":
+		if strings.HasSuffix(dir, "\\Temp\\GoLand") {
+			return RunIDEGoland, nil
+		}
+	default:
+		if strings.HasSuffix(dir, "GoLand") {
+			return RunIDEGoland, nil
+		}
 	}
 	return RunIDEUnknown, nil
 }
