@@ -1,0 +1,162 @@
+package how_run
+
+import (
+	"os"
+	"path/filepath"
+	"runtime"
+	"runtime/debug"
+	"strings"
+)
+
+// ------------------------------------------------- --------------------------------------------------------------------、
+
+type RunType int
+
+const (
+
+	// RunTypeSourceUnknown 咱也不知道咋运行的
+	RunTypeSourceUnknown RunType = iota
+
+	// RunTypeSourceCode 是从源代码中运行的
+	RunTypeSourceCode
+
+	// RunTypeReleaseBinary 发布的二进制文件运行
+	RunTypeReleaseBinary
+)
+
+func (x RunType) String() string {
+	switch x {
+	case RunTypeSourceUnknown:
+		return "Unknown"
+	case RunTypeSourceCode:
+		return "SourceCode"
+	case RunTypeReleaseBinary:
+		return "ReleaseBinary"
+	default:
+		return ""
+	}
+}
+
+// GetRunType 获取当前程序是以什么方式运行的
+func GetRunType() (RunType, error) {
+	executable, err := os.Executable()
+	if err != nil {
+		return RunTypeSourceUnknown, err
+	}
+	switch runtime.GOOS {
+	case "windows":
+		if strings.Contains(executable, "\\AppData\\Local\\Temp\\") {
+			return RunTypeSourceCode, nil
+		} else {
+			return RunTypeReleaseBinary, nil
+		}
+	case "linux":
+		if strings.HasPrefix(executable, "/tmp/go-build") {
+			return RunTypeSourceCode, nil
+		} else {
+			return RunTypeReleaseBinary, nil
+		}
+	}
+	return RunTypeSourceUnknown, nil
+}
+
+// ------------------------------------------------- --------------------------------------------------------------------
+
+// SourceCodeRunType 如果是从源代码运行的话，则入口是啥
+type SourceCodeRunType int
+
+const (
+
+	// SourceCodeRunTypeUnknown 只知道是从源代码中运行的，但是入口俺也不知道
+	SourceCodeRunTypeUnknown SourceCodeRunType = iota
+
+	// SourceCodeRunTypeExample 是从Example运行的
+	SourceCodeRunTypeExample
+
+	// SourceCodeRunTypeBenchmark 是从Benchmark运行的
+	SourceCodeRunTypeBenchmark
+
+	// SourceCodeRunTypeMain 是从main.go运行的
+	SourceCodeRunTypeMain
+
+	// SourceCodeRunTypeTest 是从测试用例运行的
+	SourceCodeRunTypeTest
+)
+
+func (x SourceCodeRunType) String() string {
+	switch x {
+	case SourceCodeRunTypeUnknown:
+		return "Unknown"
+	case SourceCodeRunTypeExample:
+		return "Example"
+	case SourceCodeRunTypeBenchmark:
+		return "Benchmark"
+	case SourceCodeRunTypeMain:
+		return "main.go"
+	case SourceCodeRunTypeTest:
+		return "Test"
+	default:
+		return ""
+	}
+}
+
+// GetSourceCodeRunType 如果是从源代码运行的，则是以什么方式运行的
+func GetSourceCodeRunType() (SourceCodeRunType, error) {
+	stack := string(debug.Stack())
+	split := strings.Split(stack, "\n")
+	if len(split) < 3 {
+		return SourceCodeRunTypeUnknown, nil
+	}
+	s := split[len(split)-3]
+	switch s {
+	case "created by testing.(*T).Run":
+		return SourceCodeRunTypeTest, nil
+	case "created by testing.(*B).run1":
+		return SourceCodeRunTypeBenchmark, nil
+	case "main.main()":
+		if strings.HasPrefix(split[len(split)-2], "\t_testmain.go") {
+			return SourceCodeRunTypeExample, nil
+		} else {
+			return SourceCodeRunTypeMain, nil
+		}
+	}
+	return SourceCodeRunTypeUnknown, nil
+}
+
+// ------------------------------------------------- --------------------------------------------------------------------
+
+// RunIDE 是从什么IDE中运行的
+type RunIDE int
+
+const (
+
+	// RunIDEUnknown 咱也不知道是啥IDE
+	RunIDEUnknown RunIDE = iota
+
+	// RunIDEGoland 是从GoLand中运行的
+	RunIDEGoland
+)
+
+func (x RunIDE) String() string {
+	switch x {
+	case RunIDEUnknown:
+		return "Unknown"
+	case RunIDEGoland:
+		return "Goland"
+	default:
+		return ""
+	}
+}
+
+func GetRunIDE() (RunIDE, error) {
+	executable, err := os.Executable()
+	if err != nil {
+		return RunIDEUnknown, err
+	}
+	if strings.HasSuffix(filepath.Dir(executable), "\\Temp\\GoLand") {
+		return RunIDEGoland, nil
+	}
+	return RunIDEUnknown, nil
+}
+
+// ------------------------------------------------- --------------------------------------------------------------------
