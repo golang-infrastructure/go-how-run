@@ -14,8 +14,8 @@ type RunType int
 
 const (
 
-	// RunTypeSourceUnknown 咱也不知道咋运行的
-	RunTypeSourceUnknown RunType = iota
+	// RunTypeUnknown 咱也不知道咋运行的
+	RunTypeUnknown RunType = iota
 
 	// RunTypeSourceCode 是从源代码中运行的
 	RunTypeSourceCode
@@ -26,7 +26,7 @@ const (
 
 func (x RunType) String() string {
 	switch x {
-	case RunTypeSourceUnknown:
+	case RunTypeUnknown:
 		return "Unknown"
 	case RunTypeSourceCode:
 		return "SourceCode"
@@ -41,7 +41,7 @@ func (x RunType) String() string {
 func GetRunType() (RunType, error) {
 	executable, err := os.Executable()
 	if err != nil {
-		return RunTypeSourceUnknown, err
+		return RunTypeUnknown, err
 	}
 	switch runtime.GOOS {
 	case "windows":
@@ -66,7 +66,7 @@ func GetRunType() (RunType, error) {
 			return RunTypeReleaseBinary, nil
 		}
 	}
-	return RunTypeSourceUnknown, nil
+	return RunTypeUnknown, nil
 }
 
 // ------------------------------------------------- --------------------------------------------------------------------
